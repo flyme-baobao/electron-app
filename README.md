@@ -12,6 +12,7 @@
 | --- | --- |
 | [开发启动时序](./docs/dev-startup.md) | `npm run dev` 的完整启动过程、时序图、各类改动如何生效 |
 | [IPC 通信](./docs/ipc.md) | 主进程与渲染进程的通信机制、通道配对、参数与错误处理 |
+| [app-file 协议](./docs/app-file-protocol.md) | 图片预览的数据流转：自定义协议如何替代 IPC 传输二进制 |
 | [项目文件说明](./docs/files.md) | 各文件与目录的职责、配置项含义、依赖放置约定 |
 
 
@@ -69,12 +70,14 @@ electron-app/
 ├── docs/
 │   ├── dev-startup.md        # 开发启动时序说明
 │   ├── ipc.md                # IPC 通信说明
+│   ├── app-file-protocol.md  # app-file 协议数据流转说明
 │   └── files.md              # 项目文件说明
 ├── src/
 │   ├── main/
-│   │   ├── index.ts          # 主进程入口：创建窗口、注册 IPC
-│   │   ├── ipc/              # IPC 处理器（versions、image）
-│   │   └── lib/              # 不依赖 electron 的纯逻辑
+│   │   ├── index.ts          # 主进程入口：创建窗口、注册 IPC 与协议
+│   │   ├── protocol.ts       # app-file 自定义协议注册与处理器
+│   │   ├── ipc/              # IPC 处理器（versions、image、appFile）
+│   │   └── lib/              # 不依赖 electron 的纯逻辑（image、workspace）
 │   ├── preload/
 │   │   ├── index.ts          # 预加载脚本，contextBridge 暴露 API
 │   │   └── global.d.ts       # window.electronAPI 类型声明

@@ -2,7 +2,7 @@
 
 本文说明主进程与渲染进程之间的通信机制，以及本项目当前的实现方式。
 
-配套阅读：[开发启动时序](./dev-startup.md)、[项目文件说明](./files.md)
+配套阅读：[开发启动时序](./dev-startup.md)、[app-file 协议](./app-file-protocol.md)、[项目文件说明](./files.md)
 
 ---
 
