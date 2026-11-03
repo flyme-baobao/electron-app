@@ -1,5 +1,7 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow } from 'electron'
 import path from 'node:path'
+import { registerImageHandlers } from './ipc/image'
+import { registerVersionHandlers } from './ipc/versions'
 
 // 由构建脚本注入：开发模式为 Vite dev server 地址，生产模式为空
 const DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL
@@ -29,6 +31,9 @@ const createWindow = (): void => {
 }
 
 app.whenReady().then(() => {
+    registerVersionHandlers()
+    registerImageHandlers()
+
     createWindow()
 
     app.on('activate', () => {
@@ -39,10 +44,3 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit()
 })
-
-// 暴露给渲染进程的运行时版本信息
-ipcMain.handle('get-versions', () => ({
-    node: process.versions.node,
-    chrome: process.versions.chrome,
-    electron: process.versions.electron
-}))

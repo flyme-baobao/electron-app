@@ -1,11 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-
-interface RuntimeVersions {
-    node: string
-    chrome: string
-    electron: string
-}
+import ImagePreview from './components/ImagePreview.vue'
+import type { RuntimeVersions } from '../shared/types'
 
 const versions = ref<RuntimeVersions>({ node: '-', chrome: '-', electron: '-' })
 
@@ -30,19 +26,27 @@ onMounted(async () => {
             </template>
         </p>
 
-        <button class="counter" @click="versions = { ...versions }">
-            Vue 3 + Vite + TypeScript 已就绪
-        </button>
+        <ImagePreview />
     </main>
 </template>
 
 <style scoped>
 .app {
-    font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-width: 760px;
+    margin: 0 auto;
     padding: 2rem;
+    font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+.app h1 {
+    margin: 0;
 }
 
 .intro {
+    margin: 0;
     color: #4a5568;
     line-height: 1.8;
 }
@@ -53,17 +57,13 @@ onMounted(async () => {
     font-weight: 600;
 }
 
-.counter {
-    margin-top: 1.5rem;
-    padding: 0.6rem 1.2rem;
-    border: 1px solid #cbd5e0;
-    border-radius: 6px;
-    background: #f7fafc;
-    cursor: pointer;
-    font-size: 0.95rem;
-}
+@media (prefers-color-scheme: dark) {
+    .intro {
+        color: #a0aec0;
+    }
 
-.counter:hover {
-    background: #edf2f7;
+    .version {
+        color: #63b3ed;
+    }
 }
 </style>

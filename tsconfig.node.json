@@ -12,5 +12,5 @@
         "resolveJsonModule": true,
         "isolatedModules": true
     },
-    "include": ["vite.config.ts", "src/main/**/*.ts", "src/preload/**/*.ts"]
+    "include": ["vite.config.ts", "src/main/**/*.ts", "src/preload/**/*.ts", "src/shared/**/*.ts"]
 }
