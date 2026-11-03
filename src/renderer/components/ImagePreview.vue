@@ -41,7 +41,7 @@ const applyImage = (result: ImagePreviewResult): void => {
     image.value = result
 }
 
-/** 拖拽释放：取第一个文件，交给主进程按路径读取 */
+/** 拖拽释放：取第一个文件，交给主进程换取 app-file 地址 */
 const onDrop = async (event: DragEvent): Promise<void> => {
     event.preventDefault()
     dragActive.value = false
@@ -58,7 +58,7 @@ const onDrop = async (event: DragEvent): Promise<void> => {
     clearError()
     loading.value = true
     try {
-        applyImage(await window.electronAPI.readImage(filePath))
+        applyImage(await window.electronAPI.describeImage(filePath))
     } catch (err) {
         error.value = err instanceof Error ? err.message : String(err)
     } finally {
@@ -107,7 +107,7 @@ const reset = (): void => {
                 <div class="preview__canvas">
                     <img
                         v-if="!brokenImage"
-                        :src="image.dataUrl"
+                        :src="image.url"
                         :alt="image.fileName"
                         class="preview__image"
                         @error="brokenImage = true"
@@ -115,7 +115,7 @@ const reset = (): void => {
                     <p v-else class="preview__placeholder">图片无法解析，可能已损坏</p>
                 </div>
                 <div class="preview__meta">
-                    <span class="preview__name" :title="image.filePath">{{ image.fileName }}</span>
+                    <span class="preview__name">{{ image.fileName }}</span>
                     <span class="preview__info">{{ image.mimeType }} · {{ formatSize(image.size) }}</span>
                 </div>
             </template>

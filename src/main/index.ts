@@ -1,11 +1,20 @@
 import { app, BrowserWindow, session } from 'electron'
 import path from 'node:path'
+import { PRODUCTION_CSP } from '../../csp.constant'
 import { registerImageHandlers } from './ipc/image'
 import { registerVersionHandlers } from './ipc/versions'
+import {
+    disposeAppFileProtocol,
+    registerAppFileProtocol,
+    registerAppFileSchemePrivileges
+} from './protocol'
 
 // 由构建脚本注入：开发模式为 Vite dev server 地址，生产模式为空
 const DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL
 const isDev = !app.isPackaged && !!DEV_SERVER_URL
+
+// 必须在 app ready 之前执行，因此放在模块顶层
+registerAppFileSchemePrivileges()
 
 /**
  * 开发模式下使用独立的数据目录，避免多个实例同时运行时
@@ -28,19 +37,7 @@ const applyProductionCsp = (): void => {
         callback({
             responseHeaders: {
                 ...details.responseHeaders,
-                'Content-Security-Policy': [
-                    [
-                        "default-src 'self'",
-                        "script-src 'self'",
-                        "style-src 'self' 'unsafe-inline'",
-                        "img-src 'self' data: blob:",
-                        "font-src 'self' data:",
-                        "connect-src 'self'",
-                        "object-src 'none'",
-                        "base-uri 'self'",
-                        "form-action 'none'"
-                    ].join('; ')
-                ]
+                'Content-Security-Policy': [PRODUCTION_CSP]
             }
         })
     })
@@ -61,6 +58,9 @@ const createWindow = (): void => {
 
     win.once('ready-to-show', () => win.show())
 
+    // 窗口销毁即回收根目录授权，已下发的 app-file URL 随之失效
+    win.on('closed', disposeAppFileProtocol)
+
     if (isDev) {
         win.loadURL(DEV_SERVER_URL)
         win.webContents.openDevTools({ mode: 'detach' })
@@ -72,6 +72,7 @@ const createWindow = (): void => {
 app.whenReady().then(() => {
     registerVersionHandlers()
     registerImageHandlers()
+    registerAppFileProtocol()
     applyProductionCsp()
 
     createWindow()
@@ -82,5 +83,6 @@ app.whenReady().then(() => {
 })
 
 app.on('window-all-closed', () => {
+    disposeAppFileProtocol()
     if (process.platform !== 'darwin') app.quit()
 })

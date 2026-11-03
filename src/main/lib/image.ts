@@ -1,6 +1,8 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
+import { APP_FILE_SCHEME } from '../../../csp.constant'
 import type { ImagePreviewResult } from '../../shared/types'
+import { authorizeRoot } from './workspace'
 
 /** 允许预览的图片扩展名，与文件选择对话框的过滤器保持一致 */
 export const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg', 'avif']
@@ -33,8 +35,11 @@ const resolveImageMimeType = (filePath: string): string => {
     return MIME_TYPES[ext]
 }
 
-/** 读取图片并转换为 data URL，供渲染进程直接用于 <img :src> */
-export const readImageAsDataUrl = async (filePath: string): Promise<ImagePreviewResult> => {
+/**
+ * 授权图片所在的目录，并返回可直接用于 <img src> 的 app-file URL。
+ * 绝对路径不会出现在返回值中，渲染进程只拿到一个不可逆的 rootId。
+ */
+export const describeImage = async (filePath: string): Promise<ImagePreviewResult> => {
     const mimeType = resolveImageMimeType(filePath)
 
     const stat = await fs.stat(filePath)
@@ -45,12 +50,18 @@ export const readImageAsDataUrl = async (filePath: string): Promise<ImagePreview
         throw new Error(`图片过大（${(stat.size / 1024 / 1024).toFixed(1)} MB），上限 32 MB`)
     }
 
-    const buffer = await fs.readFile(filePath)
+    const rootId = await authorizeRoot(path.dirname(filePath))
+    // pathname 逐段编码，避免文件名中的 # ? % 被当作 URL 语法
+    const encodedPath = path.basename(filePath).replace(
+        /[^A-Za-z0-9._~-]/g,
+        (char) => encodeURIComponent(char)
+    )
+
     return {
-        filePath,
         fileName: path.basename(filePath),
-        dataUrl: `data:${mimeType};base64,${buffer.toString('base64')}`,
         size: stat.size,
-        mimeType
+        mimeType,
+        // 加时间戳做缓存版本号，文件被覆盖后 <img> 仍会重新拉取
+        url: `${APP_FILE_SCHEME}://${rootId}/${encodedPath}?v=${stat.mtimeMs}`
     }
 }

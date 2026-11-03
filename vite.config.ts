@@ -4,26 +4,11 @@ import { fileURLToPath, URL } from 'node:url'
 import { createServer } from 'node:net'
 import { writeFileSync, mkdirSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { PRODUCTION_CSP } from './csp.constant.ts'
 
 const PREFERRED_PORT = 5173
 const rootDir = import.meta.dirname
 const PORT_FILE = resolve(rootDir, 'node_modules/.vite-dev-port')
-
-/**
- * 生产环境 CSP：去掉 'unsafe-eval'，并禁止任何远程连接。
- * 开发环境的 CSP 写在 index.html 中（Vite HMR 需要 eval 与 WebSocket）。
- */
-const PRODUCTION_CSP = [
-    "default-src 'self'",
-    "script-src 'self'",
-    "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob:",
-    "font-src 'self' data:",
-    "connect-src 'self'",
-    "object-src 'none'",
-    "base-uri 'self'",
-    "form-action 'none'"
-].join('; ')
 
 /** 构建时把 index.html 中的开发版 CSP 替换为生产版 */
 const productionCspPlugin = () => ({
