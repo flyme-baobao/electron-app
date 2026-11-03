@@ -13,6 +13,7 @@
 | [开发启动时序](./docs/dev-startup.md) | `npm run dev` 的完整启动过程、时序图、各类改动如何生效 |
 | [IPC 通信](./docs/ipc.md) | 主进程与渲染进程的通信机制、通道配对、参数与错误处理 |
 | [app-file 协议](./docs/app-file-protocol.md) | 图片预览的数据流转：自定义协议如何替代 IPC 传输二进制 |
+| [进程模型](./docs/process-model.md) | 运行时有哪些进程、各自职责、一次资源请求跨哪些进程 |
 | [项目文件说明](./docs/files.md) | 各文件与目录的职责、配置项含义、依赖放置约定 |
 
 
@@ -71,6 +72,7 @@ electron-app/
 │   ├── dev-startup.md        # 开发启动时序说明
 │   ├── ipc.md                # IPC 通信说明
 │   ├── app-file-protocol.md  # app-file 协议数据流转说明
+│   ├── process-model.md      # 进程模型与跨进程路径
 │   └── files.md              # 项目文件说明
 ├── src/
 │   ├── main/
