@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
-import type { ImagePreviewResult, RuntimeVersions } from '../shared/types'
+import type { ImagePreviewResult, RevokeRootResult, RuntimeVersions } from '../shared/types'
 
 const api = {
     getVersions: (): Promise<RuntimeVersions> => ipcRenderer.invoke('get-versions'),
@@ -13,6 +13,12 @@ const api = {
      */
     describeImage: (filePath: string): Promise<ImagePreviewResult> =>
         ipcRenderer.invoke('image:describe', filePath),
+
+    /**
+     * 撤销某个 app-file 地址背后的根目录授权，之后该地址一律 404。
+     * 用于清除预览、切换文件，以及源文件被删除或改名后的失效处理。
+     */
+    revokeAppFile: (url: string): Promise<RevokeRootResult> => ipcRenderer.invoke('app-file:revoke', url),
 
     /**
      * 获取拖拽进窗口的 File 对象对应的磁盘路径。

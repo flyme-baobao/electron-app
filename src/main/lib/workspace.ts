@@ -66,6 +66,15 @@ export const resolveInsideRoot = async (rootId: string, relativePath: string): P
     return path.join(displayRoot, normalized)
 }
 
+/**
+ * 撤销单个根目录的授权，返回该 rootId 此前是否存在。
+ * 撤销后携带该 rootId 的 app-file URL 一律 404。
+ */
+export const revokeRoot = (rootId: string): boolean => {
+    displayPaths.delete(rootId)
+    return roots.delete(rootId)
+}
+
 /** 回收全部授权记录。窗口关闭或应用退出时调用，避免已下发的 URL 长期有效 */
 export const revokeAllRoots = (): void => {
     roots.clear()

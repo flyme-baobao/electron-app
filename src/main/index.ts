@@ -1,6 +1,7 @@
 import { app, BrowserWindow, session } from 'electron'
 import path from 'node:path'
 import { PRODUCTION_CSP } from '../../csp.constant'
+import { registerAppFileHandlers } from './ipc/appFile'
 import { registerImageHandlers } from './ipc/image'
 import { registerVersionHandlers } from './ipc/versions'
 import {
@@ -72,6 +73,7 @@ const createWindow = (): void => {
 app.whenReady().then(() => {
     registerVersionHandlers()
     registerImageHandlers()
+    registerAppFileHandlers()
     registerAppFileProtocol()
     applyProductionCsp()
 

@@ -20,6 +20,20 @@ const clearError = (): void => {
     error.value = ''
 }
 
+/**
+ * 释放当前图片占用的根目录授权。
+ * 撤销失败不影响界面（该 rootId 可能已随窗口关闭被清理），因此只记录到控制台。
+ */
+const releaseImage = async (): Promise<void> => {
+    const current = image.value
+    if (!current) return
+    try {
+        await window.electronAPI.revokeAppFile(current.url)
+    } catch (err) {
+        console.warn('撤销 app-file 授权失败', err)
+    }
+}
+
 /** 通过系统对话框选择图片 */
 const pickImage = async (): Promise<void> => {
     clearError()
@@ -27,7 +41,7 @@ const pickImage = async (): Promise<void> => {
     try {
         const result = await window.electronAPI.pickImage()
         if (result) {
-            applyImage(result)
+            await applyImage(result)
         }
     } catch (err) {
         error.value = err instanceof Error ? err.message : String(err)
@@ -36,7 +50,9 @@ const pickImage = async (): Promise<void> => {
     }
 }
 
-const applyImage = (result: ImagePreviewResult): void => {
+/** 替换当前预览，同时撤销上一张图片的授权 */
+const applyImage = async (result: ImagePreviewResult): Promise<void> => {
+    await releaseImage()
     brokenImage.value = false
     image.value = result
 }
@@ -58,7 +74,7 @@ const onDrop = async (event: DragEvent): Promise<void> => {
     clearError()
     loading.value = true
     try {
-        applyImage(await window.electronAPI.describeImage(filePath))
+        await applyImage(await window.electronAPI.describeImage(filePath))
     } catch (err) {
         error.value = err instanceof Error ? err.message : String(err)
     } finally {
@@ -75,7 +91,8 @@ const onDragLeave = (): void => {
     dragActive.value = false
 }
 
-const reset = (): void => {
+const reset = async (): Promise<void> => {
+    await releaseImage()
     image.value = null
     brokenImage.value = false
     clearError()
