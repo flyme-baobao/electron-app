@@ -226,7 +226,7 @@ graph TD
 | 现象 | 原因 | 处理 |
 | --- | --- | --- |
 | 窗口空白 | Electron 连不上 dev server | 比对 `[electron] connecting to ...` 的端口与 Vite 输出 |
-| `window.electronAPI` undefined | preload 未编译成功或 `sandbox: true` | 确认 `out/preload.cjs` 存在；检查 `sandbox` |
+| `window.electronAPI` undefined | preload 未编译成功，或窗口在改动前已打开 | 确认 `out/preload.cjs` 存在，重启应用 |
 | 端口被占用但仍能启动 | 端口探测生效，已顺延 | 正常现象，看日志确认实际端口 |
 | 改了主进程代码没反应 | 主进程无热重载 | 重启 `npm run dev` |
 | 关掉窗口后端口仍被占 | 残留 node 进程 | 用 `netstat -ano \| findstr :端口` 定位并结束 |

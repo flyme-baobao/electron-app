@@ -12,14 +12,26 @@ electron-app/
 │   ├── node.mjs              # esbuild：编译主进程与预加载
 │   └── dev-electron.mjs      # 等待条件并启动 Electron
 ├── docs/                     # 项目文档
+│   ├── dev-startup.md        # 开发启动时序
+│   ├── ipc.md                # IPC 通信
+│   └── files.md              # 本文
 ├── src/
-│   ├── main/index.ts         # 主进程
+│   ├── shared/types.ts       # 主进程与渲染进程共享的类型
+│   ├── main/                 # 主进程
+│   │   ├── index.ts          # 入口：创建窗口、注册 IPC
+│   │   ├── ipc/              # IPC 处理器
+│   │   │   ├── versions.ts
+│   │   │   └── image.ts
+│   │   └── lib/              # 不依赖 electron 的纯逻辑
+│   │       └── image.ts
 │   ├── preload/              # 预加载脚本
 │   │   ├── index.ts
 │   │   └── global.d.ts
 │   └── renderer/             # 渲染进程（Vue 3）
 │       ├── main.ts
 │       ├── App.vue
+│       ├── components/
+│       │   └── ImagePreview.vue
 │       ├── style.css
 │       └── env.d.ts
 ├── index.html                # Vite 入口 HTML
@@ -40,16 +52,42 @@ electron-app/
 
 ## 源码
 
-### `src/main/index.ts` — 主进程
+### `src/shared/types.ts` — 共享类型
+
+主进程、preload、渲染进程共同引用的类型定义（`RuntimeVersions`、`ImagePreviewResult`）。
+
+渲染进程只从这里取类型，**不直接引用 preload 源码**，避免产生不必要的耦合。
+
+### `src/main/index.ts` — 主进程入口
 
 运行在 Node.js 环境，应用的唯一入口。
 
 - 创建 `BrowserWindow`
 - 开发模式加载 Vite dev server，生产模式加载 `dist/index.html`
 - 管理应用生命周期（`whenReady`、`activate`、`window-all-closed`）
-- 通过 `ipcMain.handle` 向渲染进程提供数据
+- 在 `whenReady` 中调用各模块的 `registerXxxHandlers()` 完成 IPC 注册
 
 **为什么用 `show: false`**：窗口先隐藏，等 `ready-to-show` 再显示，避免用户看到白屏。
+
+**为什么先注册再建窗口**：页面一加载就会调用 IPC，handler 未注册时 `invoke` 会直接失败。
+
+### `src/main/ipc/` — IPC 处理器
+
+| 文件 | 通道 | 职责 |
+| --- | --- | --- |
+| `versions.ts` | `get-versions` | 返回运行时版本信息 |
+| `image.ts` | `image:pick` | 弹文件对话框读取图片 |
+| `image.ts` | `image:read` | 按路径读取图片（拖拽场景） |
+
+这一层依赖 electron（`ipcMain`、`dialog`、`BrowserWindow`）。
+
+### `src/main/lib/` — 纯逻辑
+
+| 文件 | 职责 |
+| --- | --- |
+| `image.ts` | 扩展名白名单校验、MIME 映射、大小限制、读取并转 data URL |
+
+**不依赖 electron**，只用 `node:fs` 与 `node:path`，因此可以独立进行单元测试，无需 mock。
 
 ### `src/preload/index.ts` — 预加载脚本
 
@@ -61,11 +99,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
 })
 ```
 
+暴露的 API：`getVersions`、`pickImage`、`readImage`、`getPathForFile`。
+
 **为什么不能直接暴露 `ipcRenderer`**：那等于把任意 IPC 调用能力交给页面，失去隔离意义。只暴露白名单函数。
+
+**为什么需要 `getPathForFile`**：Electron 32 起 `File.path` 已移除，拖拽文件必须使用
+`webUtils.getPathForFile()`，而它只在 preload 世界可用。该函数不是 IPC，是本地同步调用。
+
+详细机制见 [IPC 通信](./ipc.md)。
 
 ### `src/preload/global.d.ts` — 全局类型声明
 
 为 `window.electronAPI` 提供类型，让渲染进程调用时获得补全与校验。
+
+`ElectronAPI` 由 `typeof api` 推导，新增 preload 函数时无需手动维护类型。
 
 ### `src/renderer/main.ts` — Vue 应用入口
 
@@ -73,7 +120,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
 ### `src/renderer/App.vue` — 根组件
 
-示例根组件：挂载后调用 `window.electronAPI.getVersions()` 显示各运行时版本号。
+挂载后调用 `window.electronAPI.getVersions()` 显示各运行时版本号，并挂载图片预览组件。
+
+### `src/renderer/components/ImagePreview.vue` — 图片预览组件
+
+- 「选择图片」按钮，触发系统文件对话框
+- 支持拖拽图片进窗口
+- 显示文件名、MIME 类型、大小
+- 加载状态、错误提示、解码失败兜底
 
 ### `src/renderer/env.d.ts` — 渲染进程类型声明
 
