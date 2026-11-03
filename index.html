@@ -3,6 +3,14 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+        Content-Security-Policy 生产环境由 vite.config.ts 的 transformIndexHtml 注入更严格的版本。
+        这里的默认值适用于开发（Vite HMR 需要 eval 与 WebSocket 连接）。
+    -->
+    <meta
+        http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws: http://localhost:*"
+    />
     <title>Electron App</title>
 </head>
 <body>

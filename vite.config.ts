@@ -10,6 +10,33 @@ const rootDir = import.meta.dirname
 const PORT_FILE = resolve(rootDir, 'node_modules/.vite-dev-port')
 
 /**
+ * 生产环境 CSP：去掉 'unsafe-eval'，并禁止任何远程连接。
+ * 开发环境的 CSP 写在 index.html 中（Vite HMR 需要 eval 与 WebSocket）。
+ */
+const PRODUCTION_CSP = [
+    "default-src 'self'",
+    "script-src 'self'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob:",
+    "font-src 'self' data:",
+    "connect-src 'self'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'none'"
+].join('; ')
+
+/** 构建时把 index.html 中的开发版 CSP 替换为生产版 */
+const productionCspPlugin = () => ({
+    name: 'inject-production-csp',
+    apply: 'build' as const,
+    transformIndexHtml: (html: string): string =>
+        html.replace(
+            /<meta\s+http-equiv="Content-Security-Policy"[\s\S]*?\/>/,
+            `<meta http-equiv="Content-Security-Policy" content="${PRODUCTION_CSP}" />`
+        )
+})
+
+/**
  * 从 preferred 开始向上探测第一个可用的 TCP 端口。
  * 这样 5173 被占用时会自动顺延，而不是直接启动失败。
  */
@@ -42,7 +69,7 @@ export default defineConfig(async () => {
     writeFileSync(PORT_FILE, String(port), 'utf-8')
 
     return {
-        plugins: [vue()],
+        plugins: [vue(), productionCspPlugin()],
         // Electron 通过 file:// 加载打包产物，必须使用相对路径
         base: './',
         resolve: {

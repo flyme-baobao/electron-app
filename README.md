@@ -69,13 +69,20 @@ electron-app/
 │   ├── dev-startup.md        # 开发启动时序说明
 │   └── files.md              # 项目文件说明
 ├── src/
-│   ├── main/index.ts         # 主进程入口
+│   ├── main/
+│   │   ├── index.ts          # 主进程入口：创建窗口、注册 IPC
+│   │   ├── ipc/              # IPC 处理器（versions、image）
+│   │   └── lib/              # 不依赖 electron 的纯逻辑
 │   ├── preload/
 │   │   ├── index.ts          # 预加载脚本，contextBridge 暴露 API
 │   │   └── global.d.ts       # window.electronAPI 类型声明
+│   ├── shared/
+│   │   └── types.ts          # 主进程与渲染进程共享的类型
 │   └── renderer/             # 渲染进程（Vue 3）
 │       ├── main.ts           # Vue 应用入口
 │       ├── App.vue           # 根组件
+│       ├── components/
+│       │   └── ImagePreview.vue  # 图片预览组件
 │       ├── style.css
 │       └── env.d.ts
 ├── index.html                # Vite 入口 HTML
@@ -146,7 +153,7 @@ webPreferences: {
   preload: path.join(__dirname, 'preload.cjs'),
   contextIsolation: true,   // 隔离预加载与页面上下文
   nodeIntegration: false,   // 页面中不暴露 Node.js
-  sandbox: false            // 预加载脚本需使用 CommonJS require('electron')
+  sandbox: true             // 沙箱模式下 preload 仍可用 require('electron')
 }
 ```
 
@@ -158,7 +165,7 @@ webPreferences: {
 | --- | --- |
 | `npm run dev` 报 `Port 5173 is already in use` | 有其他 Vite 进程占用端口，结束对应进程或修改 `vite.config.ts` 的 `server.port` |
 | Electron 打开是白屏 | 确认 Vite dev server 已就绪；生产模式检查 `dist/index.html` 是否存在 |
-| `window.electronAPI` undefined | 检查 preload 是否编译成功（`out/preload.cjs`）、`sandbox` 是否误设为 `true` |
+| `window.electronAPI` undefined | 检查 preload 是否编译成功（`out/preload.cjs`），以及窗口是否在 preload 改动前就已打开 |
 | 改了主进程代码没生效 | 主进程不热重载，需重启 `npm run dev` |
 | 页面中版本号为空 | 打开 DevTools（`Ctrl + Shift + I`）查看 preload 与 IPC 报错 |
 
