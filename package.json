@@ -1,15 +1,31 @@
 {
-  "name": "my-electron-app",
-  "version": "1.0.0",
-  "description": "",
-  "main": "main.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "electron ."
-  },
-  "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "electron": "^45.2.1"
-  }
+    "name": "electron-app",
+    "version": "1.0.0",
+    "description": "Electron + Vue 3 + Vite + TypeScript desktop app",
+    "main": "out/main.cjs",
+    "type": "module",
+    "scripts": {
+        "dev": "concurrently -k -n vite,esbuild,electron -c cyan,yellow,green \"npm:dev:renderer\" \"npm:dev:node\" \"npm:dev:electron\"",
+        "dev:renderer": "vite",
+        "dev:node": "node build/node.mjs --watch",
+        "dev:electron": "node build/dev-electron.mjs",
+        "build": "npm run typecheck && npm run build:renderer && npm run build:node",
+        "build:renderer": "vite build",
+        "build:node": "node build/node.mjs",
+        "typecheck": "vue-tsc --noEmit -p tsconfig.web.json && tsc --noEmit -p tsconfig.node.json",
+        "preview": "npm run build && electron ."
+    },
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+        "@types/node": "^26.6.6",
+        "@vitejs/plugin-vue": "^6.0.10",
+        "concurrently": "^10.0.6",
+        "electron": "^45.2.1",
+        "esbuild": "^0.28.2",
+        "typescript": "^6.0.3",
+        "vite": "^8.3.5",
+        "vue": "^3.5.44",
+        "vue-tsc": "^3.3.14"
+    }
 }
